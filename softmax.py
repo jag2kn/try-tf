@@ -28,7 +28,7 @@ def extract_data(filename):
 
     # Iterate over the rows, splitting the label from the features. Convert labels
     # to integers and features to floats.
-    for line in file(filename):
+    for line in open(filename):
         row = line.split(",")
         labels.append(int(row[0]))
         fvecs.append([float(x) for x in row[1:]])
@@ -87,46 +87,64 @@ def main(argv=None):
     # Evaluation.
     correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+    prediction=tf.argmax(y_,1)
+    incorrect_prediction = tf.not_equal(tf.argmax(y,1), tf.argmax(y_,1))
+    inaccuracy = tf.reduce_mean(tf.cast(incorrect_prediction, "float"))
 
     # Create a local session to run this computation.
     with tf.Session() as s:
         # Run all the initializers to prepare the trainable parameters.
         tf.initialize_all_variables().run()
         if verbose:
-            print 'Initialized!'
-            print
-            print 'Training.'
+            print ('Initialized!')
+            print ()
+            print ('Training.')
 
         # Iterate and train.
-        for step in xrange(num_epochs * train_size // BATCH_SIZE):
+        for step in range(num_epochs * train_size // BATCH_SIZE):
             if verbose:
-                print step,
+                print (step,)
                 
             offset = (step * BATCH_SIZE) % train_size
             batch_data = train_data[offset:(offset + BATCH_SIZE), :]
             batch_labels = train_labels[offset:(offset + BATCH_SIZE)]
-            train_step.run(feed_dict={x: batch_data, y_: batch_labels})
+            r = train_step.run(feed_dict={x: batch_data, y_: batch_labels})
+            print (r)
             
             if verbose and offset >= train_size-BATCH_SIZE:
-                print
+                print ()
 
         # Give very detailed output.
         if verbose:
-            print
-            print 'Weight matrix.'
-            print s.run(W)
-            print
-            print 'Bias vector.'
-            print s.run(b)
-            print
-            print "Applying model to first test instance."
+            print ()
+            print ('Weight matrix.')
+            print (s.run(W))
+            print ()
+            print ('Bias vector.')
+            print (s.run(b))
+            print ()
+            print ("Applying model to first test instance.")
             first = test_data[:1]
-            print "Point =", first
-            print "Wx+b = ", s.run(tf.matmul(first,W)+b)
-            print "softmax(Wx+b) = ", s.run(tf.nn.softmax(tf.matmul(first,W)+b))
-            print
+            print ("Point =", first)
+            print ("Wx+b = ", s.run(tf.matmul(first,W)+b))
+            print ("softmax(Wx+b) = ", s.run(tf.nn.softmax(tf.matmul(first,W)+b)))
             
-        print "Accuracy:", accuracy.eval(feed_dict={x: test_data, y_: test_labels})
+            print ("----")
+        rs = tf.argmax(y,1).eval(feed_dict={x: test_data, y_: test_labels})
+        for r in rs:
+            print (r)
+        
+        print ()
+
+
+
+        print ("Accuracy:", accuracy.eval(feed_dict={x: test_data, y_: test_labels}))
+        print ("Inaccuracy:", inaccuracy.eval(feed_dict={x: test_data, y_: test_labels}))
+
+        
+        
+        print (correct_prediction)
+        
     
 if __name__ == '__main__':
     tf.app.run()
